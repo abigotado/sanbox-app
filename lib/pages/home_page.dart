@@ -1,6 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
+import 'call_page.dart';
+
 class HomePage extends StatelessWidget {
   const HomePage({Key? key}) : super(key: key);
 
@@ -12,7 +14,8 @@ class HomePage extends StatelessWidget {
         child: Center(
           child: GestureDetector(
             onTap: () {
-              print('click');
+              Navigator.push(
+                  context, MaterialPageRoute(builder: (context) => CallPage()));
             },
             child: Container(
               margin: EdgeInsets.only(left: 36, right: 36),
