@@ -18,8 +18,8 @@ class Signaling {
   };
 
   RTCPeerConnection? peerConnection;
-  MediaStream? localStream;
-  MediaStream? remoteStream;
+  MediaStream? _localStream;
+  MediaStream? _remoteStream;
   String? roomId;
   String? currentRoomText;
   StreamStateCallback? onAddRemoteStream;
@@ -34,8 +34,8 @@ class Signaling {
 
     registerPeerConnectionListeners();
 
-    localStream?.getTracks().forEach((track) {
-      peerConnection?.addTrack(track, localStream!);
+    _localStream?.getTracks().forEach((track) {
+      peerConnection?.addTrack(track, _localStream!);
     });
 
     var callerCandidatesCollection = roomRef.collection('callerCandidates');
@@ -61,7 +61,7 @@ class Signaling {
 
       event.streams[0].getTracks().forEach((track) {
         print('Add a track to the remoteStream $track');
-        remoteStream?.addTrack(track);
+        _remoteStream?.addTrack(track);
       });
     };
 
@@ -112,8 +112,8 @@ class Signaling {
 
       registerPeerConnectionListeners();
 
-      localStream?.getTracks().forEach((track) {
-        peerConnection?.addTrack(track, localStream!);
+      _localStream?.getTracks().forEach((track) {
+        peerConnection?.addTrack(track, _localStream!);
       });
 
       var calleeCandidatesCollection = roomRef.collection('calleeCandidates');
@@ -130,7 +130,7 @@ class Signaling {
         print('Got remote track: ${event.streams[0]}');
         event.streams[0].getTracks().forEach((track) {
           print('Add a track to the remoteStream: $track');
-          remoteStream?.addTrack(track);
+          _remoteStream?.addTrack(track);
         });
       };
 
@@ -176,7 +176,7 @@ class Signaling {
         .getUserMedia({'video': true, 'audio': true});
 
     localVideo.srcObject = stream;
-    localStream = stream;
+    _localStream = stream;
 
     remoteVideo.srcObject = await createLocalMediaStream('key');
   }
@@ -187,8 +187,8 @@ class Signaling {
       track.stop();
     });
 
-    if (remoteStream != null) {
-      remoteStream!.getTracks().forEach((track) => track.stop());
+    if (_remoteStream != null) {
+      _remoteStream!.getTracks().forEach((track) => track.stop());
     }
     if (peerConnection != null) peerConnection!.close();
 
@@ -204,8 +204,8 @@ class Signaling {
       await roomRef.delete();
     }
 
-    localStream!.dispose();
-    remoteStream?.dispose();
+    _localStream!.dispose();
+    _remoteStream?.dispose();
   }
 
   void registerPeerConnectionListeners() {
@@ -228,7 +228,21 @@ class Signaling {
     peerConnection?.onAddStream = (MediaStream stream) {
       print("Add remote stream");
       onAddRemoteStream?.call(stream);
-      remoteStream = stream;
+      _remoteStream = stream;
     };
+  }
+
+  void muteMic() {
+    if (_localStream != null) {
+      bool enabled = _localStream!.getAudioTracks()[0].enabled;
+      _localStream!.getAudioTracks()[0].enabled = !enabled;
+    }
+  }
+
+  void stopCamera() {
+    if (_localStream != null) {
+      bool enabled = _localStream!.getVideoTracks()[0].enabled;
+      _localStream!.getVideoTracks()[0].enabled = !enabled;
+    }
   }
 }

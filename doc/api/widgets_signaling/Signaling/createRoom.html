@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
-  <meta name="description" content="API docs for the onAddRemoteStream property from the Signaling class, for the Dart programming language.">
-  <title>onAddRemoteStream property - Signaling class - signaling library - Dart API</title>
+  <meta name="description" content="API docs for the createRoom method from the Signaling class, for the Dart programming language.">
+  <title>createRoom method - Signaling class - signaling library - Dart API</title>
 
 
   
@@ -32,9 +32,9 @@
     <li><a href="../../index.html">flutter_sandbox</a></li>
     <li><a href="../../widgets_signaling/widgets_signaling-library.html">signaling</a></li>
     <li><a href="../../widgets_signaling/Signaling-class.html">Signaling</a></li>
-    <li class="self-crumb">onAddRemoteStream property</li>
+    <li class="self-crumb">createRoom method</li>
   </ol>
-  <div class="self-name">onAddRemoteStream</div>
+  <div class="self-name">createRoom</div>
   <form class="search navbar-right" role="search">
     <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
   </form>
@@ -45,24 +45,101 @@
 
   <div id="dartdoc-main-content" class="main-content">
       <div>
-<h1><span class="kind-property">onAddRemoteStream</span> property 
+<h1><span class="kind-method">createRoom</span> method 
     <a href="https://dart.dev/null-safety" class="feature feature-null-safety" title="Supports the null safety language feature.">Null safety</a>
 </h1></div>
 
-        <section class="multi-line-signature">
-          <a href="../../widgets_signaling/StreamStateCallback.html">StreamStateCallback</a>?
-          <span class="name ">onAddRemoteStream</span>
-          <div class="features">read / write</div>
+    <section class="multi-line-signature">
+      
 
-        </section>
-        
+<span class="returntype"><a href="https://api.flutter.dev/flutter/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span>
+<span class="name ">createRoom</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="createRoom-param-remoteRenderer"><span class="type-annotation"><a href="https://pub.dev/documentation/flutter_webrtc/0.6.5/flutter_webrtc/RTCVideoRenderer-class.html">RTCVideoRenderer</a></span> <span class="parameter-name">remoteRenderer</span></span></li>
+</ol>)
 
-        
+      
+
+    </section>
+    
+
+
+    
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">StreamStateCallback? onAddRemoteStream;
+  <pre class="language-dart"><code class="language-dart">Future&lt;String&gt; createRoom(RTCVideoRenderer remoteRenderer) async {
+  FirebaseFirestore db = FirebaseFirestore.instance;
+  DocumentReference roomRef = db.collection(&#39;rooms&#39;).doc();
 
-</code></pre>
+  print(&#39;Create PeerConnection with configuration: $configuration&#39;);
+
+  peerConnection = await createPeerConnection(configuration);
+
+  registerPeerConnectionListeners();
+
+  _localStream?.getTracks().forEach((track) {
+    peerConnection?.addTrack(track, _localStream!);
+  });
+
+  var callerCandidatesCollection = roomRef.collection(&#39;callerCandidates&#39;);
+
+  peerConnection?.onIceCandidate = (RTCIceCandidate candidate) {
+    print(&#39;Got candidate: ${candidate.toMap()}&#39;);
+    callerCandidatesCollection.add(candidate.toMap());
+  };
+
+  RTCSessionDescription offer = await peerConnection!.createOffer();
+  await peerConnection!.setLocalDescription(offer);
+  print(&#39;Created offer: $offer&#39;);
+
+  Map&lt;String, dynamic&gt; roomWithOffer = {&#39;offer&#39;: offer.toMap()};
+
+  await roomRef.set(roomWithOffer);
+  var roomId = roomRef.id;
+  print(&#39;New room created with SDK offer. Room ID: $roomId&#39;);
+  currentRoomText = &#39;Current room is $roomId - You are the caller!&#39;;
+
+  peerConnection?.onTrack = (RTCTrackEvent event) {
+    print(&#39;Got remote track: ${event.streams[0]}&#39;);
+
+    event.streams[0].getTracks().forEach((track) {
+      print(&#39;Add a track to the remoteStream $track&#39;);
+      _remoteStream?.addTrack(track);
+    });
+  };
+
+  roomRef.snapshots().listen((snapshot) async {
+    print(&#39;Got updated room: ${snapshot.data()}&#39;);
+
+    Map&lt;String, dynamic&gt; data = snapshot.data() as Map&lt;String, dynamic&gt;;
+    if (peerConnection?.getRemoteDescription() != null &amp;&amp;
+        data[&#39;answer&#39;] != null) {
+      var answer = RTCSessionDescription(
+        data[&#39;answer&#39;][&#39;sdp&#39;],
+        data[&#39;answer&#39;][&#39;type&#39;],
+      );
+
+      print(&quot;Someone tried to connect&quot;);
+      await peerConnection?.setRemoteDescription(answer);
+    }
+  });
+
+  roomRef.collection(&#39;calleeCandidates&#39;).snapshots().listen((snapshot) {
+    snapshot.docChanges.forEach((change) {
+      if (change.type == DocumentChangeType.added) {
+        Map&lt;String, dynamic&gt; data = change.doc.data() as Map&lt;String, dynamic&gt;;
+        print(&#39;Got new remote ICE candidate: ${jsonEncode(data)}&#39;);
+        peerConnection!.addCandidate(
+          RTCIceCandidate(
+            data[&#39;candidate&#39;],
+            data[&#39;sdpMid&#39;],
+            data[&#39;sdpMLineIndex&#39;],
+          ),
+        );
+      }
+    });
+  });
+
+  return roomId;
+}</code></pre>
 </section>
 
 
@@ -79,7 +156,7 @@
   <li><a href="../../index.html">flutter_sandbox</a></li>
   <li><a href="../../widgets_signaling/widgets_signaling-library.html">signaling</a></li>
   <li><a href="../../widgets_signaling/Signaling-class.html">Signaling</a></li>
-  <li class="self-crumb">onAddRemoteStream property</li>
+  <li class="self-crumb">createRoom method</li>
 </ol>
 
 
