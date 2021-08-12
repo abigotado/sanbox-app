@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
-  <meta name="description" content="API docs for the onAddRemoteStream property from the Signaling class, for the Dart programming language.">
-  <title>onAddRemoteStream property - Signaling class - signaling library - Dart API</title>
+  <meta name="description" content="API docs for the joinRoom method from the Signaling class, for the Dart programming language.">
+  <title>joinRoom method - Signaling class - signaling library - Dart API</title>
 
 
   
@@ -32,9 +32,9 @@
     <li><a href="../../index.html">flutter_sandbox</a></li>
     <li><a href="../../widgets_signaling/widgets_signaling-library.html">signaling</a></li>
     <li><a href="../../widgets_signaling/Signaling-class.html">Signaling</a></li>
-    <li class="self-crumb">onAddRemoteStream property</li>
+    <li class="self-crumb">joinRoom method</li>
   </ol>
-  <div class="self-name">onAddRemoteStream</div>
+  <div class="self-name">joinRoom</div>
   <form class="search navbar-right" role="search">
     <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
   </form>
@@ -45,24 +45,94 @@
 
   <div id="dartdoc-main-content" class="main-content">
       <div>
-<h1><span class="kind-property">onAddRemoteStream</span> property 
+<h1><span class="kind-method">joinRoom</span> method 
     <a href="https://dart.dev/null-safety" class="feature feature-null-safety" title="Supports the null safety language feature.">Null safety</a>
 </h1></div>
 
-        <section class="multi-line-signature">
-          <a href="../../widgets_signaling/StreamStateCallback.html">StreamStateCallback</a>?
-          <span class="name ">onAddRemoteStream</span>
-          <div class="features">read / write</div>
+    <section class="multi-line-signature">
+      
 
-        </section>
-        
+<span class="returntype"><a href="https://api.flutter.dev/flutter/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter">void</span>&gt;</span></span>
+<span class="name ">joinRoom</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="joinRoom-param-roomId"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">roomId</span>, </span></li>
+<li><span class="parameter" id="joinRoom-param-remoteVideo"><span class="type-annotation"><a href="https://pub.dev/documentation/flutter_webrtc/0.6.5/flutter_webrtc/RTCVideoRenderer-class.html">RTCVideoRenderer</a></span> <span class="parameter-name">remoteVideo</span></span></li>
+</ol>)
 
-        
+      
+
+    </section>
+    
+
+
+    
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">StreamStateCallback? onAddRemoteStream;
+  <pre class="language-dart"><code class="language-dart">Future&lt;void&gt; joinRoom(String roomId, RTCVideoRenderer remoteVideo) async {
+  FirebaseFirestore db = FirebaseFirestore.instance;
+  DocumentReference roomRef = db.collection(&#39;rooms&#39;).doc(&#39;$roomId&#39;);
+  var roomSnapshot = await roomRef.get();
+  print(&#39;Got room ${roomSnapshot.exists}&#39;);
 
-</code></pre>
+  if (roomSnapshot.exists) {
+    print(&#39;Create PeerConnection with configuration: $configuration&#39;);
+    peerConnection = await createPeerConnection(configuration);
+
+    registerPeerConnectionListeners();
+
+    _localStream?.getTracks().forEach((track) {
+      peerConnection?.addTrack(track, _localStream!);
+    });
+
+    var calleeCandidatesCollection = roomRef.collection(&#39;calleeCandidates&#39;);
+    peerConnection!.onIceCandidate = (RTCIceCandidate candidate) {
+      if (candidate == null) {
+        print(&#39;onIceCandidate: complete!&#39;);
+        return;
+      }
+      print(&#39;onIceCandidate: ${candidate.toMap()}&#39;);
+      calleeCandidatesCollection.add(candidate.toMap());
+    };
+
+    peerConnection?.onTrack = (RTCTrackEvent event) {
+      print(&#39;Got remote track: ${event.streams[0]}&#39;);
+      event.streams[0].getTracks().forEach((track) {
+        print(&#39;Add a track to the remoteStream: $track&#39;);
+        _remoteStream?.addTrack(track);
+      });
+    };
+
+    var data = roomSnapshot.data() as Map&lt;String, dynamic&gt;;
+    print(&#39;Got offer $data&#39;);
+    var offer = data[&#39;offer&#39;];
+    await peerConnection?.setRemoteDescription(
+      RTCSessionDescription(offer[&#39;sdp&#39;], offer[&#39;type&#39;]),
+    );
+    var answer = await peerConnection!.createAnswer();
+    print(&#39;Created Answer $answer&#39;);
+
+    await peerConnection!.setLocalDescription(answer);
+
+    Map&lt;String, dynamic&gt; roomWithAnswer = {
+      &#39;answer&#39;: {&#39;type&#39;: answer.type, &#39;sdp&#39;: answer.sdp}
+    };
+
+    await roomRef.update(roomWithAnswer);
+
+    roomRef.collection(&#39;callerCandidates&#39;).snapshots().listen((snapshot) {
+      snapshot.docChanges.forEach((document) {
+        var data = document.doc.data() as Map&lt;String, dynamic&gt;;
+        print(data);
+        print(&#39;Got new remote ICE candidate: $data&#39;);
+        peerConnection!.addCandidate(
+          RTCIceCandidate(
+            data[&#39;candidate&#39;],
+            data[&#39;sdpMid&#39;],
+            data[&#39;sdpMLineIndex&#39;],
+          ),
+        );
+      });
+    });
+  }
+}</code></pre>
 </section>
 
 
@@ -79,7 +149,7 @@
   <li><a href="../../index.html">flutter_sandbox</a></li>
   <li><a href="../../widgets_signaling/widgets_signaling-library.html">signaling</a></li>
   <li><a href="../../widgets_signaling/Signaling-class.html">Signaling</a></li>
-  <li class="self-crumb">onAddRemoteStream property</li>
+  <li class="self-crumb">joinRoom method</li>
 </ol>
 
 

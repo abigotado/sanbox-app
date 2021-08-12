@@ -3,6 +3,7 @@ import 'dart:core';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_sandbox/widgets/signaling.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 
 class VideoCall extends StatefulWidget {
@@ -18,6 +19,9 @@ class _VideoCallState extends State<VideoCall> {
   RTCVideoRenderer _remoteRenderer = RTCVideoRenderer();
   String? roomId;
   TextEditingController textEditingController = TextEditingController(text: '');
+  bool _calling = false;
+  var cam = false;
+  var mic = false;
 
   @override
   void initState() {
@@ -39,108 +43,164 @@ class _VideoCallState extends State<VideoCall> {
     super.dispose();
   }
 
+  void _reset() {
+    Navigator.pushReplacement(
+      context,
+      PageRouteBuilder(
+        transitionDuration: Duration.zero,
+        pageBuilder: (_, __, ___) => VideoCall(),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(body: OrientationBuilder(builder: (context, orientation) {
-      return Container(
-        child: Stack(
-          children: <Widget>[
-            Positioned(
-                left: 0.0,
-                right: 0.0,
-                top: 0.0,
-                bottom: 0.0,
-                child: Container(
-                    margin: EdgeInsets.fromLTRB(0.0, 0.0, 0.0, 0.0),
-                    width: MediaQuery.of(context).size.width,
-                    height: MediaQuery.of(context).size.height,
-                    color: Colors.white,
-                    child: RTCVideoView(_remoteRenderer))),
-            Positioned(
-              left: 20.0,
-              top: 20.0,
-              child: Container(
-                width: orientation == Orientation.portrait ? 90.0 : 120.0,
-                height: orientation == Orientation.portrait ? 120.0 : 90.0,
-                padding: EdgeInsets.only(left: 10),
-                child: Container(
-                    child: RTCVideoView(_localRenderer, mirror: true)),
-              ),
-            ),
-            Padding(
-              padding: EdgeInsets.fromLTRB(10, 400, 10, 10),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      ElevatedButton(
-                        onPressed: () {
-                          // Add roomId
-                          signaling.joinRoom(
-                            textEditingController.text,
-                            _remoteRenderer,
-                          );
-                        },
-                        child: Text("Join room"),
-                      ),
-                      SizedBox(
-                        width: 8,
-                      ),
-                      ElevatedButton(
-                        onPressed: () async {
-                          roomId = await signaling.createRoom(_remoteRenderer);
-                          textEditingController.text = roomId!;
-                          setState(() {});
-                        },
-                        child: Text("Create room"),
-                      ),
-                    ],
-                  ),
-                  SizedBox(
-                    height: 8,
-                  ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      ElevatedButton(
-                        onPressed: () {
-                          signaling.openUserMedia(
-                              _localRenderer, _remoteRenderer);
-                        },
-                        child: Text("Open camera & microphone"),
-                      ),
-                      SizedBox(
-                        width: 8,
-                      ),
-                      ElevatedButton(
-                        onPressed: () {
-                          signaling.hangUp(_localRenderer);
-                        },
-                        child: Text("Hangup"),
-                      )
-                    ],
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
+    return Scaffold(
+        extendBodyBehindAppBar: true,
+        appBar: _calling
+            ? AppBar(
+                elevation: 0,
+                backgroundColor: Colors.transparent,
+                title: Text(
+                  roomId!,
+                  style: TextStyle(color: Colors.white, fontSize: 22),
+                ),
+                centerTitle: true,
+              )
+            : null,
+        floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+        floatingActionButton: _calling
+            ? Padding(
+                padding: const EdgeInsets.all(48.0),
+                child: SizedBox(
+                    width: 235.0,
                     child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: <Widget>[
+                          FloatingActionButton(
+                              onPressed: () {
+                                signaling.stopCamera();
+                                setState(() => cam = !cam);
+                              },
+                              backgroundColor: cam
+                                  ? Color.fromRGBO(108, 108, 108, 1)
+                                  : Color.fromRGBO(217, 217, 217, 1),
+                              child: cam
+                                  ? SvgPicture.asset(
+                                      'assets/icons/video-off.svg')
+                                  : SvgPicture.asset(
+                                      'assets/icons/video-on.svg')),
+                          FloatingActionButton(
+                            onPressed: () {
+                              signaling.muteMic();
+                              setState(() => mic = !mic);
+                            },
+                            backgroundColor: mic
+                                ? Color.fromRGBO(108, 108, 108, 1)
+                                : Color.fromRGBO(217, 217, 217, 1),
+                            child: mic
+                                ? SvgPicture.asset('assets/icons/mic-off.svg')
+                                : SvgPicture.asset('assets/icons/mic-on.svg'),
+                          ),
+                          FloatingActionButton(
+                            onPressed: () {
+                              signaling.hangUp(_localRenderer);
+                              _reset();
+                            },
+                            tooltip: 'Hangup',
+                            child:
+                                SvgPicture.asset('assets/icons/end-call.svg'),
+                            backgroundColor: Colors.red,
+                          ),
+                        ])),
+              )
+            : null,
+        body: OrientationBuilder(builder: (context, orientation) {
+          return Container(
+            child: _calling
+                ? Stack(
+                    children: <Widget>[
+                      Positioned(
+                          left: 0.0,
+                          right: 0.0,
+                          top: 0.0,
+                          bottom: 0.0,
+                          child: Container(
+                              margin: EdgeInsets.fromLTRB(0.0, 0.0, 0.0, 0.0),
+                              width: MediaQuery.of(context).size.width,
+                              height: MediaQuery.of(context).size.height,
+                              color: Colors.black54,
+                              child: RTCVideoView(_remoteRenderer))),
+                      Positioned(
+                        right: 14.0,
+                        top: 100.0,
+                        child: Container(
+                          width: orientation == Orientation.portrait
+                              ? 119.0
+                              : 181.0,
+                          height: orientation == Orientation.portrait
+                              ? 181.0
+                              : 119.0,
+                          padding: EdgeInsets.only(left: 10),
+                          child: Container(
+                              child:
+                                  RTCVideoView(_localRenderer, mirror: true)),
+                        ),
+                      ),
+                    ],
+                  )
+                : SafeArea(
+                    child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            ElevatedButton(
+                              onPressed: () {
+                                signaling.joinRoom(
+                                  textEditingController.text,
+                                  _remoteRenderer,
+                                );
+                                signaling.openUserMedia(
+                                    _localRenderer, _remoteRenderer);
+                                setState(() {
+                                  _calling = true;
+                                });
+                              },
+                              child: Text("Join room"),
+                            ),
+                            SizedBox(
+                              width: 8,
+                            ),
+                            ElevatedButton(
+                              onPressed: () async {
+                                signaling.openUserMedia(
+                                    _localRenderer, _remoteRenderer);
+                                roomId =
+                                    await signaling.createRoom(_remoteRenderer);
+                                textEditingController.text = roomId!;
+                                setState(() {
+                                  _calling = true;
+                                });
+                              },
+                              child: Text("Create room"),
+                            ),
+                          ],
+                        ),
+                        SizedBox(
+                          height: 8,
+                        ),
                         Text("Join the following Room: "),
                         Flexible(
                           child: TextFormField(
                             controller: textEditingController,
                           ),
-                        )
+                        ),
                       ],
                     ),
                   ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      );
-    }));
+          );
+        }));
   }
 }

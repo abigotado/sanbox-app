@@ -113,7 +113,8 @@ Widget build(BuildContext context) {
       child: Center(
         child: GestureDetector(
           onTap: () {
-            print(&#39;click&#39;);
+            Navigator.push(
+                context, MaterialPageRoute(builder: (context) =&gt; CallPage()));
           },
           child: Container(
             margin: EdgeInsets.only(left: 36, right: 36),

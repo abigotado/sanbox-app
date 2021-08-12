@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
-  <meta name="description" content="API docs for the onAddRemoteStream property from the Signaling class, for the Dart programming language.">
-  <title>onAddRemoteStream property - Signaling class - signaling library - Dart API</title>
+  <meta name="description" content="API docs for the hangUp method from the Signaling class, for the Dart programming language.">
+  <title>hangUp method - Signaling class - signaling library - Dart API</title>
 
 
   
@@ -32,9 +32,9 @@
     <li><a href="../../index.html">flutter_sandbox</a></li>
     <li><a href="../../widgets_signaling/widgets_signaling-library.html">signaling</a></li>
     <li><a href="../../widgets_signaling/Signaling-class.html">Signaling</a></li>
-    <li class="self-crumb">onAddRemoteStream property</li>
+    <li class="self-crumb">hangUp method</li>
   </ol>
-  <div class="self-name">onAddRemoteStream</div>
+  <div class="self-name">hangUp</div>
   <form class="search navbar-right" role="search">
     <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
   </form>
@@ -45,24 +45,52 @@
 
   <div id="dartdoc-main-content" class="main-content">
       <div>
-<h1><span class="kind-property">onAddRemoteStream</span> property 
+<h1><span class="kind-method">hangUp</span> method 
     <a href="https://dart.dev/null-safety" class="feature feature-null-safety" title="Supports the null safety language feature.">Null safety</a>
 </h1></div>
 
-        <section class="multi-line-signature">
-          <a href="../../widgets_signaling/StreamStateCallback.html">StreamStateCallback</a>?
-          <span class="name ">onAddRemoteStream</span>
-          <div class="features">read / write</div>
+    <section class="multi-line-signature">
+      
 
-        </section>
-        
+<span class="returntype"><a href="https://api.flutter.dev/flutter/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter">void</span>&gt;</span></span>
+<span class="name ">hangUp</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="hangUp-param-localVideo"><span class="type-annotation"><a href="https://pub.dev/documentation/flutter_webrtc/0.6.5/flutter_webrtc/RTCVideoRenderer-class.html">RTCVideoRenderer</a></span> <span class="parameter-name">localVideo</span></span></li>
+</ol>)
 
-        
+      
+
+    </section>
+    
+
+
+    
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">StreamStateCallback? onAddRemoteStream;
+  <pre class="language-dart"><code class="language-dart">Future&lt;void&gt; hangUp(RTCVideoRenderer localVideo) async {
+  List&lt;MediaStreamTrack&gt; tracks = localVideo.srcObject!.getTracks();
+  tracks.forEach((track) {
+    track.stop();
+  });
 
-</code></pre>
+  if (_remoteStream != null) {
+    _remoteStream!.getTracks().forEach((track) =&gt; track.stop());
+  }
+  if (peerConnection != null) peerConnection!.close();
+
+  if (roomId != null) {
+    var db = FirebaseFirestore.instance;
+    var roomRef = db.collection(&#39;rooms&#39;).doc(roomId);
+    var calleeCandidates = await roomRef.collection(&#39;calleeCandidates&#39;).get();
+    calleeCandidates.docs.forEach((document) =&gt; document.reference.delete());
+
+    var callerCandidates = await roomRef.collection(&#39;callerCandidates&#39;).get();
+    callerCandidates.docs.forEach((document) =&gt; document.reference.delete());
+
+    await roomRef.delete();
+  }
+
+  _localStream!.dispose();
+  _remoteStream?.dispose();
+}</code></pre>
 </section>
 
 
@@ -79,7 +107,7 @@
   <li><a href="../../index.html">flutter_sandbox</a></li>
   <li><a href="../../widgets_signaling/widgets_signaling-library.html">signaling</a></li>
   <li><a href="../../widgets_signaling/Signaling-class.html">Signaling</a></li>
-  <li class="self-crumb">onAddRemoteStream property</li>
+  <li class="self-crumb">hangUp method</li>
 </ol>
 
 
