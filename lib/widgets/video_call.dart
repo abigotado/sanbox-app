@@ -53,6 +53,27 @@ class _VideoCallState extends State<VideoCall> {
     );
   }
 
+  showIdDialog(BuildContext context) {
+    Widget okButton = TextButton(
+      child: Text('OK'),
+      onPressed: () => Navigator.pop(context),
+    );
+
+    AlertDialog idDialog = AlertDialog(
+      title: Text('Room ID:'),
+      content: SelectableText(roomId!),
+      actions: [
+        okButton,
+      ],
+    );
+
+    showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return idDialog;
+        });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -62,7 +83,7 @@ class _VideoCallState extends State<VideoCall> {
                 elevation: 0,
                 backgroundColor: Colors.transparent,
                 title: Text(
-                  roomId!,
+                  'Call',
                   style: TextStyle(color: Colors.white, fontSize: 22),
                 ),
                 centerTitle: true,
@@ -147,6 +168,27 @@ class _VideoCallState extends State<VideoCall> {
                                   RTCVideoView(_localRenderer, mirror: true)),
                         ),
                       ),
+                      Positioned(
+                        bottom: 120,
+                        left: 20,
+                        child: Container(
+                          height: 50,
+                          padding: EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: Color.fromRGBO(117, 125, 232, 1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: TextButton(
+                            onPressed: () {
+                              showIdDialog(context);
+                            },
+                            child: Text(
+                              'Show room ID',
+                              style: TextStyle(color: Colors.white),
+                            ),
+                          ),
+                        ),
+                      )
                     ],
                   )
                 : SafeArea(
@@ -157,6 +199,10 @@ class _VideoCallState extends State<VideoCall> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             ElevatedButton(
+                              style: ButtonStyle(
+                                  backgroundColor:
+                                      MaterialStateProperty.all<Color>(
+                                          Color.fromRGBO(117, 125, 232, 1))),
                               onPressed: () {
                                 signaling.joinRoom(
                                   textEditingController.text,
@@ -174,6 +220,10 @@ class _VideoCallState extends State<VideoCall> {
                               width: 8,
                             ),
                             ElevatedButton(
+                              style: ButtonStyle(
+                                  backgroundColor:
+                                      MaterialStateProperty.all<Color>(
+                                          Color.fromRGBO(117, 125, 232, 1))),
                               onPressed: () async {
                                 signaling.openUserMedia(
                                     _localRenderer, _remoteRenderer);

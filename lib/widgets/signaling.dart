@@ -9,11 +9,12 @@ class Signaling {
   Map<String, dynamic> configuration = {
     'iceServers': [
       {
-        'urls': [
-          'stun:stun.stunprotocol.org:3478',
-          'stun:stun.l.google.com:19302'
-        ]
-      }
+        'url': 'turn:numb.viagenie.ca',
+        'credential': 'kitvideocall',
+        'username': 'nik_koval@bk.ru'
+      },
+      {'url': 'stun:stun.stunprotocol.org:3478'},
+      {'url': 'stun:stun.l.google.com:19302'},
     ]
   };
 

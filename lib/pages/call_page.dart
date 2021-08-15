@@ -14,8 +14,6 @@ class CallPage extends StatefulWidget {
 class _CallPageState extends State<CallPage> {
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      home: VideoCall(),
-    );
+    return VideoCall();
   }
 }
