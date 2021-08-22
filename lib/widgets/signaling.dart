@@ -13,8 +13,6 @@ class Signaling {
         'credential': 'kitvideocall',
         'username': 'nik_koval@bk.ru'
       },
-      {'url': 'stun:stun.stunprotocol.org:3478'},
-      {'url': 'stun:stun.l.google.com:19302'},
     ]
   };
 
